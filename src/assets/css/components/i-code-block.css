@@ -38,3 +38,9 @@
 .i-code-block__content {
 	padding: 15px 25px 25px;
 }
+
+.i-code-block__content pre {
+	background: #333;
+	padding: 10px;
+	line-height: normal;
+}

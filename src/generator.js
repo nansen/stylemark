@@ -16,151 +16,151 @@ var indexTemplate = fs.readFileSync(path.resolve(__dirname, 'templates/index.han
 class Generator {
 
 	generate(docs, destination, options = {}) {
-		mkdirp(destination, error => {
-			if (error) {
-				console.error(`Unable to create destination directory: ${error}`, error.stack);
-				return;
-			}
-
-			// Copies stylemark assets
-			fs.copySync(
-				path.resolve(__dirname, 'assets'),
-				path.resolve(destination, '_stylemark')
-			);
-
-			// Copies logo asset
-			let logo = _.get(options, 'theme.logo', '');
-			if (logo && !logo.startsWith('http')) {
+		try {
+			mkdirp(destination).then(made => {
+				// Copies stylemark assets
 				fs.copySync(
-					path.resolve(options.baseDir, logo),
-					path.resolve(options.output, logo)
+					path.resolve(__dirname, 'assets'),
+					path.resolve(destination, '_stylemark')
 				);
-			}
 
-			// Copies favicon asset
-			let favicon = options.favicon || '';
-			if (favicon && !favicon.startsWith('http')) {
-				fs.copySync(
-					path.resolve(options.baseDir, favicon),
-					path.resolve(options.output, favicon)
-				);
-			}
-
-			// Copies user assets
-			if (options.assets) {
-				_.forEach(options.assets, (asset) => {
+				// Copies logo asset
+				let logo = _.get(options, 'theme.logo', '');
+				if (logo && !logo.startsWith('http')) {
 					fs.copySync(
-						path.resolve(options.baseDir, asset),
-						path.resolve(options.output, asset)
+						path.resolve(options.baseDir, logo),
+						path.resolve(options.output, logo)
 					);
-				});
-			}
+				}
 
-			// Copies theme css
-			if (_.has(options, 'theme.css')) {
-				_(options.theme.css)
-					.reject(asset => asset.startsWith('http'))
-					.forEach(asset => {
+				// Copies favicon asset
+				let favicon = options.favicon || '';
+				if (favicon && !favicon.startsWith('http')) {
+					fs.copySync(
+						path.resolve(options.baseDir, favicon),
+						path.resolve(options.output, favicon)
+					);
+				}
+
+				// Copies user assets
+				if (options.assets) {
+					_.forEach(options.assets, (asset) => {
 						fs.copySync(
 							path.resolve(options.baseDir, asset),
 							path.resolve(options.output, asset)
 						);
 					});
-			}
+				}
 
-			// Copies theme js
-			if (_.has(options, 'theme.js')) {
-				_(options.theme.js)
-					.reject(asset => asset.startsWith('http'))
-					.forEach(asset => {
-						fs.copySync(
-							path.resolve(options.baseDir, asset),
-							path.resolve(options.output, asset)
-						);
-					});
-			}
+				// Copies theme css
+				if (_.has(options, 'theme.css')) {
+					_(options.theme.css)
+						.reject(asset => asset.startsWith('http'))
+						.forEach(asset => {
+							fs.copySync(
+								path.resolve(options.baseDir, asset),
+								path.resolve(options.output, asset)
+							);
+						});
+				}
 
-			// Copies example css
-			if (_.has(options, 'examples.css')) {
-				_(options.examples.css)
-					.reject(asset => asset.startsWith('http'))
-					.forEach(asset => {
-						fs.copySync(
-							path.resolve(options.baseDir, asset),
-							path.resolve(options.output, asset)
-						);
-					});
-			}
+				// Copies theme js
+				if (_.has(options, 'theme.js')) {
+					_(options.theme.js)
+						.reject(asset => asset.startsWith('http'))
+						.forEach(asset => {
+							fs.copySync(
+								path.resolve(options.baseDir, asset),
+								path.resolve(options.output, asset)
+							);
+						});
+				}
 
-			// Copies example js
-			if (_.has(options, 'examples.js')) {
-				_(options.examples.js)
-					.reject(asset => asset.startsWith('http'))
-					.forEach(asset => {
-						fs.copySync(
-							path.resolve(options.baseDir, asset),
-							path.resolve(options.output, asset)
-						);
-					});
-			}
+				// Copies example css
+				if (_.has(options, 'examples.css')) {
+					_(options.examples.css)
+						.reject(asset => asset.startsWith('http'))
+						.forEach(asset => {
+							fs.copySync(
+								path.resolve(options.baseDir, asset),
+								path.resolve(options.output, asset)
+							);
+						});
+				}
 
-			docs = _(docs)
-				.sortBy('name')
-				.map(doc => {
-					doc.html = this.generateDoc(doc, destination, options);
-					return doc;
-				})
-				.value();
+				// Copies example js
+				if (_.has(options, 'examples.js')) {
+					_(options.examples.js)
+						.reject(asset => asset.startsWith('http'))
+						.forEach(asset => {
+							fs.copySync(
+								path.resolve(options.baseDir, asset),
+								path.resolve(options.output, asset)
+							);
+						});
+				}
 
-			let groups = _(docs)
-				.groupBy(doc => doc.category || 'Other')
-				.map((docs, category) => {
-					var order = _.isEmpty(options.order) ? ['-Other'] : options.order;
-					var normalizedCategoryOrder = _.map(order, category => category.replace(/^[-+]/, ''));
-					var orderIndex = _.indexOf(normalizedCategoryOrder, category);
-					var isLast = (orderIndex !== -1) ? order[orderIndex].startsWith('-') : null;
+				docs = _(docs)
+					.sortBy('name')
+					.map(doc => {
+						doc.html = this.generateDoc(doc, destination, options);
+						return doc;
+					})
+					.value();
 
-					// Lower ranks will be listed first
-					var rank;
+				let groups = _(docs)
+					.groupBy(doc => doc.category || 'Other')
+					.map((docs, category) => {
+						var order = _.isEmpty(options.order) ? ['-Other'] : options.order;
+						var normalizedCategoryOrder = _.map(order, category => category.replace(/^[-+]/, ''));
+						var orderIndex = _.indexOf(normalizedCategoryOrder, category);
+						var isLast = (orderIndex !== -1) ? order[orderIndex].startsWith('-') : null;
 
-					// Explicit category order
-					if (orderIndex !== -1) {
-						if (isLast) {
-							// rank > 0 for explicit categories to list last
-							rank = orderIndex + 1;
+						// Lower ranks will be listed first
+						var rank;
+
+						// Explicit category order
+						if (orderIndex !== -1) {
+							if (isLast) {
+								// rank > 0 for explicit categories to list last
+								rank = orderIndex + 1;
+							}
+							else {
+								// rank < 0 for explicit categories to list first
+								rank = orderIndex - order.length;
+							}
 						}
+						// Unspecified category order
 						else {
-							// rank < 0 for explicit categories to list first
-							rank = orderIndex - order.length;
+							rank = 0;
 						}
-					}
-					// Unspecified category order
-					else {
-						rank = 0;
-					}
 
-					return {
-						rank: rank,
-						key: category,
-						slug: category.toLowerCase(),
-						docs: docs,
-					};
-				})
-				.sortBy(['rank', 'key'])
-				.value();
+						return {
+							rank: rank,
+							key: category,
+							slug: category.toLowerCase(),
+							docs: docs,
+						};
+					})
+					.sortBy(['rank', 'key'])
+					.value();
 
-			let html = Handlebars.compile(indexTemplate)({
-				name: options.name,
-				sidebar: _.get(options, 'theme.sidebar', {}),
-				logo,
-				favicon,
-				groups,
-				options,
+				let html = Handlebars.compile(indexTemplate)({
+					name: options.name,
+					sidebar: _.get(options, 'theme.sidebar', {}),
+					logo,
+					favicon,
+					groups,
+					options,
+				});
+
+				let filepath = path.resolve(destination, 'index.html');
+				fs.writeFile(filepath, html, 'utf8', error => error ? console.error(error, error.stack) : null);
 			});
-
-			let filepath = path.resolve(destination, 'index.html');
-			fs.writeFile(filepath, html, 'utf8', error => error ? console.error(error, error.stack) : null);
-		});
+		} catch (error) {
+			console.error(`Unable to create destination directory: ${error}`, error.stack);
+			return;
+		}
 	}
 
 	generateDoc(doc, destination, options = {}) {

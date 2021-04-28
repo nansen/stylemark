@@ -54,7 +54,7 @@ function getConfig(filepath) {
 		return {};
 	}
 	var contents = fs.readFileSync(filepath, 'utf8');
-	var config = yaml.safeLoad(contents);
+	var config = yaml.load(contents);
 	return config;
 }
 
